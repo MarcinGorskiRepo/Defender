@@ -1,0 +1,18 @@
+// This hunt checks Actions & Operations values to see if the user removed previosly created external forwading Outlook rule
+// ActionType DlpRuleMatch values indicate what messages were forwarded attachment included
+// Marcin Górski
+// updated 23.11.2026
+
+CloudAppEvents
+| where Timestamp >= ago(30d)
+| extend UserId = tostring(parse_json(RawEventData).UserId)
+| where tolower(UserId) =~ "name.surname@domain.com" //Account email address
+| where ActionType has_any ("InboxRule","Set-Mailbox","DlpRuleMatch") //DlpRuleMatch checks actuall forwarded emails attachments inlcuded.
+// exporting useful values to use them in project
+| extend Data = parse_json(RawEventData)
+| mv-expand RawValues = Data.Parameters
+| extend Action = tostring(RawValues.Name)
+| extend Operations = tostring(RawValues.Value)
+| project Timestamp, ActionType, AccountDisplayName, Action, Operations, RawValues, RawEventData
+| order by Timestamp desc
+
